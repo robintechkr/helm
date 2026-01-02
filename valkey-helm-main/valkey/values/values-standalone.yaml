@@ -5,6 +5,20 @@
 replica:
   enabled: false
 
+# Authentication (ACL)
+auth:
+  enabled: true
+  # 비밀번호가 저장된 기존 Secret 이름
+  usersExistingSecret: "valkey-auth"
+  # ACL 사용자 정의
+  aclUsers:
+    # default 사용자 (필수 - 없으면 누구나 접근 가능)
+    default:
+      # 모든 키, 모든 채널, 모든 명령 허용
+      permissions: "~* &* +@all"
+      # Secret에서 비밀번호를 가져올 키 이름 (기본값: 사용자 이름)
+      passwordKey: "password"
+
 # Persistent storage for AOF and RDB
 dataStorage:
   enabled: true
