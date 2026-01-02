@@ -81,3 +81,25 @@ valkeyConfig: |
   tcp-backlog 511
   tcp-keepalive 300
   loglevel notice
+
+# Prometheus Metrics (redis_exporter 사이드카)
+metrics:
+  enabled: true
+  exporter:
+    port: 9121
+    image:
+      registry: ghcr.io
+      repository: oliver006/redis_exporter
+      tag: "v1.79.0"
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      http: 9121
