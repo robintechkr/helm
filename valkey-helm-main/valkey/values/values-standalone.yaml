@@ -1,0 +1,61 @@
+# Valkey Standalone Configuration
+# Single instance with AOF persistence
+
+# Replica disabled for standalone mode
+replica:
+  enabled: false
+
+# Persistent storage for AOF and RDB
+dataStorage:
+  enabled: true
+  requestedSize: "10Gi"
+  # StorageClass name (empty = use cluster default)
+  # Examples: "standard", "gp2", "local-path", etc.
+  className: "local-path"
+  accessModes:
+    - ReadWriteOnce
+  # Keep PVC on helm uninstall (prevent data loss)
+  keepPvc: true
+
+# Resource limits matching maxmemory (3GB Pod)
+resources:
+  requests:
+    memory: "2.5Gi"
+    cpu: "800m"
+  limits:
+    memory: "3Gi"
+    cpu: "1000m"
+
+# Valkey configuration
+valkeyConfig: |
+  # Memory (Pod: 3GB / Valkey: 2GB / CoW Buffer: 1GB)
+  maxmemory 2gb
+  maxmemory-policy volatile-lru  # TTL 설정된 키만 삭제 (이벤트 데이터 보존)
+  
+  # RDB Snapshot (SATA SSD 부하 저감)
+  save 3600 1      # 1시간마다 (변경 1개 이상)
+  save 300 100     # 5분마다 (변경 100개 이상)
+  stop-writes-on-bgsave-error yes
+  rdbcompression yes
+  rdbchecksum yes
+  rdb-save-incremental-fsync yes
+  
+  # AOF (Event Sourcing)
+  appendonly yes
+  appendfsync everysec           # 최대 1초 데이터 유실 허용
+  aof-use-rdb-preamble yes       # 빠른 복구를 위한 하이브리드 포맷
+  no-appendfsync-on-rewrite yes  # Rewrite 중 디스크 동기화 중단 (SATA 멈춤 방지)
+  auto-aof-rewrite-percentage 100
+  auto-aof-rewrite-min-size 1gb  # 파일 1GB 도달 전에는 Rewrite 안 함 (I/O 빈도 감소)
+  aof-rewrite-incremental-fsync yes
+  
+  # Performance
+  io-threads 1
+  lazyfree-lazy-eviction yes
+  lazyfree-lazy-expire yes
+  lazyfree-lazy-user-del yes     # 백그라운드 삭제 (메인 스레드 멈춤 방지)
+  
+  # Network & Logging
+  tcp-backlog 511
+  tcp-keepalive 300
+  loglevel notice
